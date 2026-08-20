@@ -1,10 +1,71 @@
 /*
-Version: 1.3
-Date: 1.11.2018
 
-Measurement of wind speed and direction together with rainfall sensor. Data are send every 10 minutes to the BigClown Hub
+Teplota vzduchu charakterizuje tepelný stav ovzduší.
+Na meteorologických stanicích se měří čidlem umístěným v radiačním krytu ve standardní výšce 2 m nad aktivním povrchem.
+Radiační kryt slouží k zastínění čidel teploty vzduchu před přímým slunečním zářením, deštěm a sněhem.
+Přízemní teplota se měří nestíněným čidlem umístěným ve výšce 5 cm nad aktivním povrchem.
+Měření se provádí nad travním porostem, popř. nad sněhovou pokrývkou.
+Měření a archivace dat teploty vzduchu se provádí v desetinách °C.
 
-Original firmware https://github.com/hubmartin/bcf-sigfox-wind-station
+Aktuální teplota [°C] udává hodnotu teploty vzduchu měřené v pravidelném 10minutovém kroku. 
+
+Maximální denní teplota [°C] udává hodnotu maxima teploty vzduchu k 21 hodině SEČ za předchozích 24 hodin. 
+
+Minimální denní teplota [°C] udává hodnotu minima teploty vzduchu k 21 hodině SEČ za předchozích 24 hodin.
+
+Minimální přízemní teplota [°C] udává hodnotu minima přízemní teploty vzduchu mezi termínem 21 hodin SEČ až 7 hodin SEČ.
+
+Průměrná denní teplota [°C] je počítána jako průměr hodnot teploty vzduchu
+naměřených v klimatologických termínech 7, 14 a 21 h místního středního slunečního času, přičemž večerní termín se počítá dvakrát.
+
+
+
+Množství srážek se udává v milimetrech (s přesností na desetiny milimetru).
+Je to výška, do které by na povrchu země sahaly padající, nebo usazené srážky ve formě vody nebo voda,
+vzniklá rozpuštěním tuhých srážek, kdyby se nevsákla do půdy, neodtekla ani neodpařila.
+Výšce srážek 1 mm odpovídá množství vody 1 litr na 1 m2 vodorovné plochy.
+
+Denní úhrn srážek [mm] je množství srážek, které spadlo za období 24 hodin.
+Měří se v termínu 7 h místního středního slunečního času a údaj se připisuje k předchozímu dni.
+
+Hodinový úhrn srážek [mm] je množství srážek, které spadlo za 1 hodinu.
+Hodnota je aktualizována 1x za hodinu z měření v celou hodinu.
+
+(Aktuální srážky se měří v pravidelném 10minutovém kroku a jsou aktualizovány každých 10 minut.)
+
+
+
+Za přízemní vítr označujeme proudění vzduchu obvykle ve výšce asi 10 m nad zemským povrchem,
+kde je rušivý vliv místních překážek a terénu na proudění již výrazně menší než v těsné blízkosti povrchu. 
+
+Rychlost větru [m.s-1] představuje dráhu vzduchové částice, kterou urazí za jednotku času. Udává se v desetinách m.s–1.
+Měření je prováděno v pravidelném 10minutovém kroku.
+
+Směr větru [°] vyjadřuje světovou stranu, odkud vítr vane. Udává se ve stupních azimutu.
+Měření je prováděno v pravidelném 10minutovém kroku.
+
+Maximální rychlost větru [m.s-1] představuje nejvyšší hodnoty okamžité rychlosti větru naměřené v daný den.
+Udává se v desetinách m.s–1.
+
+(Nárazy větru se vyhodnocují v časovém okně 5s)
+
+
+
+Vlhkost vzduchu vyjadřuje množství vody v plynném skupenství, tedy vodní páry, obsažené ve vzduchu.
+Je možno ji vyjádřit více způsoby (relativní vlhkost vzduchu, tlak vodní páry, teplota rosného bodu).  
+
+Relativní vlhkost vzduchu [%] je poměr množství vodní páry ve vzduchu skutečně obsažené k maximálnímu množství vodní páry,
+které by se v něm za dané teploty mohlo vyskytnout. Vyjadřuje se v procentech. Měření je prováděno v pravidelném 10minutovém kroku.
+
+
+
+Tlak vzduchu je síla, která působí v daném místě atmosféry kolmo na libovolně orientovanou jednotkovou plochu.
+Je vyvolán tíží vertikálního vzduchového sloupce sahajícího od místa měření až k horní hranici atmosféry.
+Tlak vzduchu se v meteorologii také nazývá tlak atmosférický či tlak barometrický a vyjadřuje se ve stonásobcích pascalu (Pa) neboli hektopascalech (hPa).
+Měření tlaku vzduchu je prováděno v pravidelném 10minutovém kroku.
+
+Pro srovnatelnost údajů v lokalitách s různou nadmořskou výškou se používá tlak přepočtený na hladinu moře dle barometrické rovnice.
+
 
 
 Datasheet
