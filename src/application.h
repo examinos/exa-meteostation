@@ -2,6 +2,8 @@
 #define _APPLICATION_H
 
 #include "angle_average.h"
+#include "exa_reed_switch.h"
+#include "exa_flip_flop.h"
 #include <twr.h>
 
 #endif // _APPLICATION_H
@@ -23,3 +25,6 @@
 // } event_param_t;
 
 // #endif // _APPLICATION_H
+
+
+

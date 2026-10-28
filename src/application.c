@@ -111,8 +111,18 @@ float windSpeedMaximum = 0;
 TWR_DATA_STREAM_FLOAT_BUFFER(stream_buffer_wind_speed, WIND_DATA_STREAM_SAMPLES)
 twr_data_stream_t stream_wind_speed;
 
-
 void anemometer_init()
+{
+    exa_flip_flop_init(TWR_MODULE_SENSOR_CHANNEL_A);
+}
+
+
+void __anemometer_init()
+{
+    exa_reed_switch_init(TWR_MODULE_SENSOR_CHANNEL_A, EXA_REED_SWITCH_EDGE_RISE_FALL);
+}
+
+void _anemometer_init()
 {
     twr_data_stream_init(&stream_wind_speed, 1, &stream_buffer_wind_speed);
 
@@ -129,7 +139,11 @@ void anemometer_init()
 
 }
 
-void anemometer_task()
+void anemometer_task(){
+
+}
+
+void _anemometer_task()
 {
     // Reading and reseting wind speed counter
     float counter = (float)twr_pulse_counter_get(TWR_MODULE_SENSOR_CHANNEL_A);
@@ -297,6 +311,11 @@ void rain_counter_handler(twr_switch_t *self, twr_switch_event_t event, void *ev
 
 
 void rain_init()
+{
+    exa_flip_flop_init(TWR_MODULE_SENSOR_CHANNEL_C);
+}
+
+void _rain_init()
 {
     // Rain counter
     twr_switch_init(&rain_gauge, TWR_GPIO_P7, TWR_SWITCH_TYPE_NC, TWR_SWITCH_PULL_UP_DYNAMIC);

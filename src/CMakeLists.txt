@@ -4,6 +4,8 @@ target_sources(
     PRIVATE
     application.c
     angle_average.c
+    exa_reed_switch.c
+    exa_flip_flop.c
     )
 
 # If you added some folder with header files you need to list them here
