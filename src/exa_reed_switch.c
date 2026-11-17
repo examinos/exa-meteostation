@@ -48,7 +48,7 @@ void exa_reed_switch_init(twr_module_sensor_channel_t channel, exa_reed_switch_e
     {
         TWR_EXTI_LINE_PA4,
         TWR_EXTI_LINE_PA5,
-        TWR_EXTI_LINE_PA7
+        TWR_EXTI_LINE_PA6
     };
 
     memset(&_exa_reed_switch_counter[channel], 0, sizeof(_exa_reed_switch_counter[channel]));

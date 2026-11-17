@@ -6,8 +6,8 @@
 #include <twr_module_sensor.h>
 #include <twr_radio.h>
 
-//! @brief Number of signed millisecond samples in one radio payload
-#define EXA_FLIP_FLOP_BUFFER_SIZE ((TWR_RADIO_MAX_BUFFER_SIZE - 1) / sizeof(int32_t))
+//! @brief Number of signed millisecond samples in one tagged radio payload
+#define EXA_FLIP_FLOP_BUFFER_SIZE ((TWR_RADIO_MAX_BUFFER_SIZE - 2) / sizeof(int32_t))
 
 //! @brief Initialize flip-flop measurement on a sensor channel
 //!

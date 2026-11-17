@@ -98,6 +98,44 @@ https://www.ebay.co.uk/itm/Mounting-arm-for-wind-speed-wind-direction-rain-meter
 // Connect 1M resistor between VDD and A screw terminal
 //#define EXTERNAL_PULLUP_VCC_A
 
+
+/**
+ * ============================================================================
+ * HARDWARE SPECIFICATION & SIGNAL CHARACTERISTICS: ANEMOMETER (CHANNEL 'A')
+ * ============================================================================
+ *
+ * 1. PHYSICAL PRINCIPLE & ELECTRICAL INTERFACE
+ *    - Sensor type: Mechanical cup anemometer with a magnetic reed switch.
+ *    - Logic states: Alternates strictly between CLOSED and OPEN states per rotation.
+ *    - Sampling resolution: 10 ms timer ticks (all measured intervals are multiples of 10 ms).
+ *
+ * 2. SIGNAL TIMING & DUTY CYCLE (EMPIRICALLY VERIFIED: 0 Hz to ~20 Hz)
+ *    - Pulses per revolution: 1 full period = 1 positive interval (+) + 1 negative interval (-).
+ *    - Duty cycle (Lo/Hi ratio): Constant ~37% : 63% across the entire speed range,
+ *      independent of rotational velocity (determined purely by magnet/switch geometry).
+ *      * Active/shorter state (+): ~35-40% of period (e.g., 20 ms at max speed, 460 ms near stop).
+ *      * Passive/longer state (-): ~60-65% of period (e.g., 30-50 ms at max speed, 710 ms near stop).
+ *    - Tested operational range:
+ *      * Low speed / coasting: Period ~700 - 1150 ms (~0.9 - 1.4 Hz).
+ *      * High speed / peak test: Period ~50 - 70 ms (~14 - 20 Hz; corresponds to ~15-20 m/s wind).
+ *      * Minimum observed valid pulse width: 20 ms (at ~20 Hz).
+ *
+ * 3. SIGNAL INTEGRITY & DEBOUNCING REQUIREMENTS
+ *    - Contact bounce (chatter): NONE observed across 200+ transitions (0 Hz to 20 Hz).
+ *      Sign alternation (+ / -) is 100% monotonic without glitches or sub-10ms spikes.
+ *    - Firmware implications:
+ *      * Hardware RC filtering / existing debouncing is completely clean.
+ *      * Software debounce/blanking window MUST NOT exceed 10-15 ms, otherwise valid
+ *        high-wind pulses (20 ms minimum width at ~20 Hz) will be masked/lost.
+ *      * Edge detection can safely trigger on every valid state transition or full period.
+ *    - Diagnostic note: A zero-duration sample is not a physical pin state. In the
+ *      shared two-edge capture it can result from a repeated EXTI callback that reads
+ *      the already-recorded pin level; this observation alone does not prove contact
+ *      bounce. The diagnostic currently counts and suppresses such callbacks.
+ * ============================================================================
+ */
+
+
 #define WIND_DATA_STREAM_SAMPLES 40
 #define MAIN_TASK_PERIOD_SECONDS 15
 
@@ -293,6 +331,47 @@ My sensor trips with 1.6mm
 
 1.6 cm^3 / 55 cm^3 = 0.029090909.. cm = 0.29090 mm
 */
+
+/**
+ * ============================================================================
+ * HARDWARE SPECIFICATION & SIGNAL CHARACTERISTICS: RAIN GAUGE (CHANNEL 'C')
+ * ============================================================================
+ *
+ * 1. PHYSICAL PRINCIPLE & ELECTRICAL INTERFACE
+ *    - Sensor type: Tipping-bucket rain gauge with a magnetic reed switch.
+ *    - Logic states: Normally OPEN (idle); momentarily CLOSED during bucket tip.
+ *    - Sampling resolution: 10 ms timer ticks (all measured intervals are multiples of 10 ms).
+ *
+ * 2. SIGNAL TIMING & PULSE WIDTH (EMPIRICALLY VERIFIED)
+ *    - Pulses per tip: Exactly 1 negative pulse (-) per bucket tip event.
+ *    - Active pulse width (CLOSED state, negative values):
+ *      * Normal / slow tipping (interval > 1000 ms): 50 - 60 ms.
+ *      * Rapid / heavy-rain tipping (interval ~470 - 730 ms): 30 - 40 ms.
+ *      * Minimum observed valid pulse width: 30 ms.
+ *    - Idle interval (OPEN state, positive values):
+ *      * Variable depending on rain intensity (tested from 470 ms up to ~982 s).
+ *    - Diagnostic note: Earlier two-edge captures showed a zero-duration sample
+ *      between some OPEN idle intervals and the following CLOSED pulse ([+idle, 0,
+ *      -pulse]). The zero is not a physical pin state; it is consistent with a
+ *      repeated EXTI callback reading the already-recorded level after closure.
+ *      The callback may reflect contact bounce or another pending EXTI event; the
+ *      capture does not distinguish these causes. Current diagnostic code counts
+ *      and suppresses same-level callbacks. With the pull-up wiring, reopening is
+ *      the preferred candidate edge for counting one tip, subject to validation.
+ *
+ * 3. SIGNAL INTEGRITY & DEBOUNCING REQUIREMENTS
+ *    - Contact bounce (chatter): NONE observed across all tipping speeds.
+ *      Transitions are completely clean without sub-10ms glitches or double-triggers.
+ *    - Firmware implications:
+ *      * Hardware RC filtering / existing debouncing is completely clean.
+ *      * Minimum valid pulse filter (if used) MUST accept pulses >= 20-30 ms,
+ *        otherwise rapid tips during torrential rain (30 ms width) will be dropped.
+ *      * Lockout / dead-time after a valid tip can safely be set to ~100-200 ms
+ *        (minimum physical bucket turnaround time observed at max manual speed is ~470 ms).
+ * ============================================================================
+ */
+
+
 #define RAINFALL_PULSE_MM 0.29090f    // millimiters of rainfall in a single pulse from the sensor
 
 twr_switch_t rain_gauge;
@@ -527,7 +606,7 @@ void climate_module_event_handler(twr_module_climate_event_t event, void *event_
 void application_init(void)
 {
 
-    twr_log_init(TWR_LOG_LEVEL_DEBUG, TWR_LOG_TIMESTAMP_ABS);
+    twr_log_init(TWR_LOG_LEVEL_DUMP, TWR_LOG_TIMESTAMP_ABS);
 
     //init temperature buffer stream
     twr_data_stream_init(&stream_internal_temperature, 1, &stream_buffer_internal_temperature);
