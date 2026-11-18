@@ -4,6 +4,7 @@ target_sources(
     PRIVATE
     application.c
     angle_average.c
+    exa_rain_gauge.c
     exa_reed_switch.c
     exa_flip_flop.c
     )

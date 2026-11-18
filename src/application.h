@@ -4,6 +4,7 @@
 #include "angle_average.h"
 #include "exa_reed_switch.h"
 #include "exa_flip_flop.h"
+#include "exa_rain_gauge.h"
 #include <twr.h>
 
 #endif // _APPLICATION_H
