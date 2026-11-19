@@ -137,7 +137,7 @@ https://www.ebay.co.uk/itm/Mounting-arm-for-wind-speed-wind-direction-rain-meter
 
 
 #define WIND_DATA_STREAM_SAMPLES 40
-#define MAIN_TASK_PERIOD_SECONDS 15
+#define MAIN_TASK_PERIOD_SECONDS_OLD 15
 
 
 // Last speed for debug
@@ -188,7 +188,7 @@ void _anemometer_task()
     twr_pulse_counter_reset(TWR_MODULE_SENSOR_CHANNEL_A);
 
     // Get current wind speed, one pulse per second ~ 2.4kmph
-    windSpeed = (counter / ((float)MAIN_TASK_PERIOD_SECONDS)) * 0.66666f; // 2.4km/h ~ 0.66666m/s
+    windSpeed = (counter / ((float)MAIN_TASK_PERIOD_SECONDS_OLD) * 0.66666f); // 2.4km/h ~ 0.66666m/s
 
     // Save maximum wind speed value
     if(windSpeed > windSpeedMaximum)
@@ -333,9 +333,11 @@ void rain_counter_handler(twr_switch_t *self, twr_switch_event_t event, void *ev
 }
 
 
+
 void rain_init()
 {
-    exa_rain_gauge_init(TWR_MODULE_SENSOR_CHANNEL_C);
+    // exa_rain_gauge_init(TWR_MODULE_SENSOR_CHANNEL_C);
+    // exa_rain_gauge_set_event_handler(rain_gauge_pulse_batch_handler, NULL);
 }
 
 void _rain_init()
@@ -547,7 +549,7 @@ void climate_module_event_handler(twr_module_climate_event_t event, void *event_
     twr_data_stream_t stream_internal_temperature;
 
 
-void application_init(void)
+void _application_init(void)
 {
 
     twr_log_init(TWR_LOG_LEVEL_DUMP, TWR_LOG_TIMESTAMP_ABS);
@@ -602,7 +604,7 @@ void application_init(void)
     twr_led_pulse(&led, 2000);
 }
 
-void application_task()
+void _application_task()
 {
     anemometer_task();
     windvane_task();
@@ -615,7 +617,7 @@ void application_task()
     twr_data_stream_get_average(&stream_internal_temperature, &internalTemperatureAverage);
 
 
-    twr_scheduler_plan_current_relative(MAIN_TASK_PERIOD_SECONDS * 1000);
+    twr_scheduler_plan_current_relative(MAIN_TASK_PERIOD_SECONDS_OLD * 1000);
 }
 
 
@@ -623,16 +625,55 @@ void application_task()
 
 
 
+#define MAIN_TASK_PERIOD_SECONDS 10 * 60
+
+
+static void rain_gauge_pulse_batch_handler(void *event_param)
+{
+    (void) event_param;
+    twr_log_info("Rain gauge counted 3 pulses");
+    float rain_mm = 1.0f * RAINFALL_PULSE_MM * 3;
+    twr_radio_pub_float("rainfall/mm", &rain_mm);
+}
 
 
 
 
+void application_init(void)
+{
+    twr_log_init(TWR_LOG_LEVEL_DUMP, TWR_LOG_TIMESTAMP_ABS);
+
+    // Init LED
+    twr_led_init(&led, TWR_GPIO_LED, false, false);
+
+    // Battery module voltage
+    twr_module_battery_init();
+
+    // Init rain gauge
+    exa_rain_gauge_init(TWR_MODULE_SENSOR_CHANNEL_C);
+    exa_rain_gauge_set_event_handler(rain_gauge_pulse_batch_handler, NULL);
 
 
 
+    // Initialize radio
+    twr_radio_init(TWR_RADIO_MODE_NODE_SLEEPING);
+    twr_radio_pairing_request("wind-station", FW_VERSION);
+
+    // Do a single blink to signalize that module is working
+    twr_led_pulse(&led, 2000);
+}
 
 
+void application_task()
+{
+    twr_scheduler_plan_current_relative(MAIN_TASK_PERIOD_SECONDS * 1000);
+    
+    float rain_mm = exa_rain_gauge_take_interval_mm();
+    twr_log_info("Rainfall in last interval: %.2f mm", rain_mm);
+    twr_radio_pub_float("rainfall/interval/mm", &rain_mm);
 
+
+}
 
 
 

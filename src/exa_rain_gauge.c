@@ -79,19 +79,27 @@ Hodnota je aktualizována 1x za hodinu z měření v celou hodinu.
 #include <exa_rain_gauge.h>
 
 #include <string.h>
+#include <twr_irq.h>
+#include <twr_scheduler.h>
+#include <twr_system.h>
 
 #define RAINFALL_PULSE_MM 0.29090f    // millimiters of rainfall in a single pulse from the sensor
+#define RAIN_GAUGE_NOTIFICATION_PULSES 3
 
 typedef struct
 {
     volatile uint32_t interval_pulse_count;
     volatile uint32_t hourly_pulse_count;
     volatile uint32_t daily_pulse_count;
+    exa_rain_gauge_event_handler_t event_handler;
+    void *event_param;
+    twr_scheduler_task_id_t task_id;
 } exa_rain_gauge_t;
 
 static exa_rain_gauge_t exa_rain_gauge_context;
 
 static void exa_rain_gauge_exti_handler(twr_exti_line_t line, void *param);
+static void exa_rain_gauge_notification_task(void *param);
 
 static const twr_exti_line_t exa_rain_gauge_exti[] =
 {
@@ -110,7 +118,14 @@ void exa_rain_gauge_init(twr_module_sensor_channel_t channel)
 
     twr_module_sensor_set_pull(channel, TWR_MODULE_SENSOR_PULL_UP_INTERNAL);
 
+    context->task_id = twr_scheduler_register(exa_rain_gauge_notification_task, context, TWR_TICK_INFINITY);
     twr_exti_register(exa_rain_gauge_exti[channel], TWR_EXTI_EDGE_RISING, exa_rain_gauge_exti_handler, context);
+}
+
+void exa_rain_gauge_set_event_handler(exa_rain_gauge_event_handler_t event_handler, void *event_param)
+{
+    exa_rain_gauge_context.event_handler = event_handler;
+    exa_rain_gauge_context.event_param = event_param;
 }
 
 
@@ -120,22 +135,38 @@ static void exa_rain_gauge_exti_handler(twr_exti_line_t line, void *param)
 
     exa_rain_gauge_t *context = (exa_rain_gauge_t *) param;
     context->interval_pulse_count++;
+
+    if (context->interval_pulse_count % RAIN_GAUGE_NOTIFICATION_PULSES == 0)
+    {
+        twr_scheduler_plan_now(context->task_id);
+    }
 }
 
-float exa_rain_gauge_get_interval_mm(void)
+static void exa_rain_gauge_notification_task(void *param)
+{
+    exa_rain_gauge_t *context = (exa_rain_gauge_t *) param;
+
+    if (context->event_handler != NULL)
+    {
+        context->event_handler(context->event_param);
+    }
+}
+
+float exa_rain_gauge_take_interval_mm(void)
 {
     exa_rain_gauge_t *context = &exa_rain_gauge_context;
 
     twr_irq_disable();
     uint32_t pulses = context->interval_pulse_count;
     context->interval_pulse_count = 0;
-    context->hourly_pulse_count += pulses;
     twr_irq_enable();
+    
+    context->hourly_pulse_count += pulses;
 
     return pulses * RAINFALL_PULSE_MM;
 }
 
-float exa_rain_gauge_get_hourly_mm(void)
+float exa_rain_gauge_take_hourly_mm(void)
 {
     exa_rain_gauge_t *context = &exa_rain_gauge_context;
 
@@ -146,7 +177,7 @@ float exa_rain_gauge_get_hourly_mm(void)
     return pulses * RAINFALL_PULSE_MM;
 }
 
-float exa_rain_gauge_get_daily_mm(void)
+float exa_rain_gauge_take_daily_mm(void)
 {
     exa_rain_gauge_t *context = &exa_rain_gauge_context;
 
@@ -154,16 +185,4 @@ float exa_rain_gauge_get_daily_mm(void)
     context->daily_pulse_count = 0;
 
     return pulses * RAINFALL_PULSE_MM;
-}
-
-void exa_rain_gauge_reset_hourly()
-{
-    exa_rain_gauge_t *context = &exa_rain_gauge_context;
-    context->hourly_pulse_count = 0;
-}
-
-void exa_rain_gauge_reset_daily()
-{
-    exa_rain_gauge_t *context = &exa_rain_gauge_context;
-    context->daily_pulse_count = 0;
 }
